@@ -1,0 +1,476 @@
+{
+  "name": "Ai Travel Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "c935be9d-54e9-4322-99e3-077b1a98002f",
+        "options": {
+          "responseData": ""
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -464,
+        0
+      ],
+      "id": "2c01b73e-9f0f-4fba-84d3-6baf2615c6d9",
+      "name": "Webhook",
+      "webhookId": "c935be9d-54e9-4322-99e3-077b1a98002f",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.aiPromptInput}}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        256,
+        0
+      ],
+      "id": "add5a1ec-d774-42b4-a5de-e605c17accc9",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the AI output (text from AI Agent)\nconst itinerary = $json[\"output\"] || \"No itinerary generated.\";\n\n// Capture form inputs\nconst name = $json[\"name\"] || $json[\"fullName\"] || \"Traveler\";\nconst email = $json[\"emailAddress\"] || $json[\"email\"] || \"yourfallback@email.com\";\nconst destination = $json[\"destination\"] || $json[\"dreamDestination\"] || \"Unknown\";\nconst startDate = $json[\"start_date\"] || \"N/A\";\nconst endDate = $json[\"end_date\"] || \"N/A\";\nconst budget = $json[\"budget\"] || $json[\"budgetRange\"] || \"N/A\";\nconst preferences = $json[\"preferences\"] || $json[\"interests\"] || \"N/A\";\n\n// --- START: New code to clean Markdown ---\nlet cleanItinerary = itinerary;\n// Remove Markdown for headings (e.g., ###) and replace with bold text\ncleanItinerary = cleanItinerary.replace(/###\\s(.*?)\\n/g, '<strong>$1</strong>');\n// Remove Markdown for bolding (**)\ncleanItinerary = cleanItinerary.replace(/\\*\\*/g, '');\n// Remove Markdown for list items (*)\ncleanItinerary = cleanItinerary.replace(/\\*\\s/g, '');\n// --- END: New code to clean Markdown ---\n\n// Format email body in HTML\nconst emailBody = `\n<html>\n<body style=\"font-family: Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 0;\">\n\n  <div style=\"max-width: 600px; margin: 30px auto; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden;\">\n\n    <div style=\"background-color: #007bff; color: #ffffff; padding: 25px; text-align: center;\">\n      <h1 style=\"margin: 0; font-size: 28px;\">Your AI-Powered Itinerary!</h1>\n    </div>\n\n    <div style=\"padding: 30px;\">\n      <p style=\"font-size: 16px; color: #333333; margin-top: 0;\">Hi ${name},</p>\n      <p style=\"font-size: 16px; color: #555555;\">Here is your personalized travel plan for ${destination}, created just for you!</p>\n      \n      <div style=\"background-color: #e9ecef; padding: 20px; border-radius: 8px; margin-top: 25px;\">\n        <h3 style=\"margin-top: 0; color: #333333;\">Trip Details</h3>\n        <ul style=\"list-style-type: none; padding: 0; margin: 0;\">\n          <li style=\"margin-bottom: 8px;\"><strong style=\"color: #0056b3;\">Destination:</strong> ${destination}</li>\n          <li style=\"margin-bottom: 8px;\"><strong style=\"color: #0056b3;\">Dates:</strong> ${startDate} &rarr; ${endDate}</li>\n          <li style=\"margin-bottom: 8px;\"><strong style=\"color: #0056b3;\">Budget:</strong> ${budget}</li>\n          <li style=\"margin-bottom: 8px;\"><strong style=\"color: #0056b3;\">Preferences:</strong> ${preferences}</li>\n        </ul>\n      </div>\n      \n      <div style=\"margin-top: 30px;\">\n        <h3 style=\"color: #333333;\">Your AI-Generated Itinerary</h3>\n        <p style=\"font-size: 15px; line-height: 1.6; color: #444444;\">\n          ${cleanItinerary.replace(/\\n/g, \"<br>\")}\n        </p>\n      </div>\n\n      <div style=\"text-align: center; margin-top: 40px;\">\n        <p style=\"color: #888888; font-size: 14px; font-style: italic;\">We hope you have a fantastic and safe trip!</p>\n      </div>\n      \n    </div>\n\n    <div style=\"background-color: #f4f4f4; text-align: center; padding: 20px; border-top: 1px solid #e0e0e0;\">\n      <p style=\"margin: 0; font-size: 12px; color: #999999;\">&copy; 2025 Your Company Name. All Rights Reserved.</p>\n    </div>\n\n  </div>\n\n</body>\n</html>\n`;\n\n// Return structured output for next nodes\nreturn [\n  {\n    json: {\n      name,\n      email,\n      destination,\n      startDate,\n      endDate,\n      budget,\n      preferences,\n      itinerary,\n      emailBody\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        816,
+        0
+      ],
+      "id": "47149f3f-82c9-4b73-8ad8-a517fce60532",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ 'Your AI Itinerary for ' + $json.destination }}",
+        "message": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1376,
+        48
+      ],
+      "id": "4f47b9b2-0929-48b9-a439-93d72beb9be8",
+      "name": "Send a message",
+      "webhookId": "f912f6f8-3183-4c1b-b2a3-63e30b135fa8",
+      "executeOnce": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "RZj53ebBqaXLczWh",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/174ADWzfKd5XP3Ob34L8S0yJboCNeuYPp7jVehZnI2xw/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/174ADWzfKd5XP3Ob34L8S0yJboCNeuYPp7jVehZnI2xw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "= {{$json.name}}",
+            "Email": "= {{$json.email}}",
+            "Start Date": "= {{$json.startDate}}",
+            "Budget": "= {{$json.budget}}",
+            "Preferences": "={{$json.preferences}}",
+            "Itinerary": "= {{$json.itinerary}}",
+            "Timestamp": "={{ new Date().toISOString() }} ",
+            "Destination": "= {{$json.destination}}",
+            "End Date": "={{$json.endDate}}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Destination",
+              "displayName": "Destination",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Start Date",
+              "displayName": "Start Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "End Date",
+              "displayName": "End Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Preferences",
+              "displayName": "Preferences",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Itinerary",
+              "displayName": "Itinerary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1344,
+        -272
+      ],
+      "id": "71f12a60-ada2-4688-9cc3-18cb4d017ff3",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "cN57lwjdfMY59JdC",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        112,
+        208
+      ],
+      "id": "6fa733d7-2772-46de-8e01-072dc4766486",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "olxfsR6BhYaTC56l",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "aca62235-7765-4e46-9e13-3ef11a4ffd6c",
+              "name": "aiPromptInput",
+              "value": "=You are an AI Travel Planner. Based on the following details, generate a personalized day-by-day travel itinerary.\n\nTraveler Name: {{$json.name}}\nDestination: {{$json.destination}}\nStart Date: {{$json.start_date}}\nEnd Date: {{$json.end_date}}\nBudget: {{$json.budget}}\nPreferences: {{$json.interests}}\n\nInstructions:\n1. Create a clear day-by-day plan from Start Date to End Date.\n2. Match activities with traveler’s interests and budget.\n3. Suggest local food and cultural experiences.\n4. Add practical travel tips (transport, safety, packing).\n5. Format output neatly.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -48,
+        0
+      ],
+      "id": "5f1b549e-850d-4769-b535-253a8e4a1e8b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This code takes the raw JSON string from the webhook's body\n// and converts it into a structured JSON object.\n\n// 1. Get the 'body' from the webhook's output.\n// The 'body' contains the entire form data as a single string.\nconst body = $json.body;\n\n// 2. Parse the JSON string into a usable JavaScript object.\nconst parsedBody = JSON.parse(body);\n\n// 3. Return the parsed object so the next node can use it.\nreturn [{\n  json: parsedBody\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -256,
+        0
+      ],
+      "id": "985621d7-fa16-46d2-a20d-7e7a5c01e709",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        576,
+        -432
+      ],
+      "id": "456b9fde-64b1-4c19-95ab-3d507ee167f7",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4e1760d2-f948-425f-937f-46b91ed0fba6",
+              "name": "emailBody",
+              "value": "={{$json.emailBody}}",
+              "type": "string"
+            },
+            {
+              "id": "683e0fc4-a5d9-4ec5-bb29-0685b9f97bdd",
+              "name": "name",
+              "value": "={{$json.name}}",
+              "type": "string"
+            },
+            {
+              "id": "1b423f51-df54-4ab5-b763-0c8f7dc6a245",
+              "name": "email",
+              "value": "={{$json.email}}",
+              "type": "string"
+            },
+            {
+              "id": "e503260d-fcc9-4959-8cb8-5e05cc85cc39",
+              "name": "destination",
+              "value": "={{$json.destination}}",
+              "type": "string"
+            },
+            {
+              "id": "b568f269-d6ba-4ebc-aa94-37dd9cf2f403",
+              "name": "startDate",
+              "value": "={{$json.startDate}}",
+              "type": "string"
+            },
+            {
+              "id": "4bd0df0d-6821-4ca3-92fb-8755c69efeae",
+              "name": "endDate",
+              "value": "={{$json.endDate}}",
+              "type": "string"
+            },
+            {
+              "id": "1836916b-0d1c-4002-a58d-c08e6c0f636e",
+              "name": "budget",
+              "value": "={{$json.budget}}",
+              "type": "string"
+            },
+            {
+              "id": "564a94db-eabe-455c-bb59-6b0881ee985c",
+              "name": "preferences",
+              "value": "={{$json.preferences}}",
+              "type": "string"
+            },
+            {
+              "id": "c396cd92-bb2e-412d-8b11-62e9d254f615",
+              "name": "itinerary",
+              "value": "={{$json.itinerary}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        16
+      ],
+      "id": "7ea83ae1-9215-4bd4-8da9-60739fea1308",
+      "name": "Edit Fields1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        []
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f334a3f1-c59d-4276-823a-93a60949c8dc",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "63d17381eab93c852105ec57957e16220f1c54c93278cb81dec453937e2577ba"
+  },
+  "id": "5Z29qyc0GmxMsVLR",
+  "tags": []
+}
